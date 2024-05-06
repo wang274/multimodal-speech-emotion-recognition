@@ -7,7 +7,7 @@ Run this script from root as python src/extract_emotion_labels.py
 import re
 import os
 import pandas as pd
-
+import chardet
 
 def extract_info():
     """
@@ -22,16 +22,22 @@ def extract_info():
     # regex used to identify useful info in the dataset files
     info_line = re.compile(r'\[.+\]\n', re.IGNORECASE)
     for sess in range(1, 6):
-        emo_evaluation_dir = 'data/IEMOCAP_full_release/Session{}/dialog/EmoEvaluation/'.format(sess)
+        emo_evaluation_dir = 'G:/IEMOCAP/Session{}/dialog/EmoEvaluation/'.format(sess)
         # Only include the session files
         evaluation_files = [l for l in os.listdir(emo_evaluation_dir)
                             if 'Ses' in l]
         for file in evaluation_files:
-            with open(emo_evaluation_dir + file) as f:
+            # 打开文件，读取一部分字节进行编码检测
+            # with open(emo_evaluation_dir + file, 'rb') as f:
+            #     raw_data = f.read(5000)  # 读取前5000字节进行检测
+            #     result = chardet.detect(raw_data)
+            #     encoding = result['encoding']
+            #     print(encoding)
+            with open(emo_evaluation_dir + file, encoding='Windows-1252') as f:
                 content = f.read()
             # grab the important stuff
-            info_lines = re.findall(info_lines, content)
-            for line in info_line[1:]:  # skipping the first header line
+            info_lines = re.findall(info_line, content)
+            for line in info_lines[1:]:  # skipping the first header line
                 # Refer to the dataset to see how `line` looks like
                 start_end_time, wav_file_name, emotion, val_act_dom = \
                     line.strip().split('\t')
@@ -65,7 +71,7 @@ def compile_dataset(info_dict):
     df_iemocap['act'] = info_dict['acts']
     df_iemocap['dom'] = info_dict['doms']
     # Finally, save to a file
-    df_iemocap.to_csv('data/pre-processed/df_iemocap.csv', index=False)
+    df_iemocap.to_csv('G:/IEMOCAP/pre-processed/df_iemocap.csv', index=False)
 
 
 def main():

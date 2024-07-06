@@ -11,8 +11,22 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+columns = ['wav_file', 'label', 'sig_mean', 'sig_std', 'rmse_mean',
+               'rmse_std', 'silence', 'harmonic', 'auto_corr_max',
+               'auto_corr_std']
+emotion_dict = {'ang': 0, 'hap': 1, 'exc': 2, 'sad': 3, 'fru': 4, 'fea': 5,
+                    'sur': 6, 'neu': 7, 'xxx': 8, 'oth': 8}
 
-def add_session_data(df_features, labels_df, emotion_dict, audio_vectors_path):
+data_dir = 'G:/IEMOCAP/pre-processed/'
+labels_path = '{}df_iemocap.csv'.format(data_dir)
+audio_vectors_path = '{}audio_vectors_'.format(data_dir)
+
+df_features = pd.DataFrame(columns=columns)
+labels_df = pd.read_csv(labels_path)
+
+def add_session_data(labels_df, emotion_dict, audio_vectors_path, sess):
+    # global columns
+    global df_features
     audio_vectors = pickle.load(open(audio_vectors_path, 'rb'))
     for index, row in tqdm(labels_df[labels_df['wav_file'].str.contains(
             'Ses0{}'.format(sess))].iterrows()):
@@ -26,7 +40,7 @@ def add_session_data(df_features, labels_df, emotion_dict, audio_vectors_path):
             feature_list.append(sig_mean)  # sig_mean
             feature_list.append(np.std(y))  # sig_std
 
-            rmse = librosa.feature.rmse(y + 0.0001)[0]
+            rmse = librosa.feature.rms(y=y + 0.0001)[0]
             feature_list.append(np.mean(rmse))  # rmse_mean
             feature_list.append(np.std(rmse))  # rmse_std
 
@@ -56,26 +70,19 @@ def add_session_data(df_features, labels_df, emotion_dict, audio_vectors_path):
             feature_list.append(np.std(auto_corrs))  # auto_corr_std
 
             df_features = df_features.append(pd.DataFrame(feature_list, index=columns).transpose(), ignore_index=True)
+
         except Exception as e:
             print('Some exception occured: {}'.format(e))
 
 
 def main():
-    emotion_dict = {'ang': 0, 'hap': 1, 'exc': 2, 'sad': 3, 'fru': 4, 'fea': 5,
-                    'sur': 6, 'neu': 7, 'xxx': 8, 'oth': 8}
 
-    data_dir = 'data/pre-processed/'
-    labels_path = '{}df_iemocap.csv'.format(data_dir)
-    audio_vectors_path = '{}audio_vectors_'.format(data_dir)
-    columns = ['wav_file', 'label', 'sig_mean', 'sig_std', 'rmse_mean',
-               'rmse_std', 'silence', 'harmonic', 'auto_corr_max',
-               'auto_corr_std']
-    df_features = pd.DataFrame(columns=columns)
-    labels_df = pd.read_csv(labels_path)
     for sess in range(1, 6):
-        add_session_data(df_features, labels_df, emotion_dict,
-                         '{}{}.pkl'.format(audio_vectors_path, sess))
-    df_features.to_csv('data/pre-processed/audio_features.csv', index=False)
+        print(f"in sess{sess}")
+        add_session_data(labels_df, emotion_dict,
+                         '{}{}.pkl'.format(audio_vectors_path, sess),sess)
+        print(df_features)
+    df_features.to_csv('G:/IEMOCAP/pre-processed/audio_features.csv', index=False)
 
 
 if __name__ == '__main__':

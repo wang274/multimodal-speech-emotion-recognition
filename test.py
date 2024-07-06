@@ -1,6 +1,6 @@
 import torch
 import librosa
-import scikit-learn
+import sklearn
 
 if torch.cuda.is_available():
     print("CUDA is available. GPU support is enabled.")
